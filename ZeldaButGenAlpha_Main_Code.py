@@ -34,7 +34,7 @@ except:
     print("Couldn't load bullet image, using rectangle instead")
     bullet_img = None
 
-ground = pygame.image.load('ground.png').convert_alpha()
+ground = pygame.transform.scale(pygame.image.load('ground.png').convert_alpha(), (WIDTH, HEIGHT//2))
 sky = pygame.transform.scale(pygame.image.load('sky.jpeg').convert_alpha(), (WIDTH, HEIGHT))
 
 running = True
