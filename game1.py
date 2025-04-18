@@ -1,6 +1,7 @@
 import pygame
 import sys
 import random
+import time
 
 WIDTH, HEIGHT = 1000, 800
 GREEN = (0, 255, 0)
@@ -55,6 +56,9 @@ while running:
                     ammo -= 1
                 else:
                     print("No more bullets left as ammo")
+            if event.key == pygame.K_z:
+                time.sleep(0.02)
+                ammo = 5
     
     key = pygame.key.get_pressed()
     if key[pygame.K_LEFT]:
@@ -100,6 +104,11 @@ while running:
                 screen.blit(bullet_img_left, (bullet['x'], bullet['y']))
         else:
             pygame.draw.rect(screen, (255, 0, 0), bullet['rect'])
+
+    font = pygame.font.SysFont(None, 36)
+    ammo_text = font.render(f'Ammo: {ammo}', True, (255, 255, 255))
+    screen.blit(ammo_text, (20, 20))
+
     
     pygame.draw.circle(screen, GREEN, (int(player_pos[0]), int(player_pos[1])), PLAYER_RADIUS)
     screen.blit(ground, (0, 755))
