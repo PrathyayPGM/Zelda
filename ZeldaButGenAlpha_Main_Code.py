@@ -22,6 +22,7 @@ bullet_speed = 10
 ammo = 5
 
 pygame.init()
+game_state = "menu"  
 font = pygame.font.SysFont(None, 28)
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
@@ -37,12 +38,53 @@ except:
 
 ground = pygame.transform.scale(pygame.image.load('ground.png').convert_alpha(), (WIDTH, HEIGHT//2))
 sky = pygame.transform.scale(pygame.image.load('sky.jpeg').convert_alpha(), (WIDTH, HEIGHT))
+def draw_menu():
+    screen.fill((20, 20, 20))  # Dark background
+    title_font = pygame.font.SysFont(None, 80)
+    text_font = pygame.font.SysFont(None, 36)
+    
+    title = title_font.render("My Game Title", True, (0, 200, 255))
+    screen.blit(title, (WIDTH//2 - title.get_width()//2, 100))
+
+    # Instructions
+    instructions = [
+        "⬅️ / ➡️  - Move",
+        "⬆️  - Jump",
+        "SPACE - Shoot (uses ammo)",
+        "Z - Reload",
+        "P - Pause",
+        "",
+        "Click START to begin"
+    ]
+    for i, line in enumerate(instructions):
+        txt = text_font.render(line, True, (255, 255, 255))
+        screen.blit(txt, (WIDTH//2 - txt.get_width()//2, 220 + i * 40))
+
+    # Draw start button
+    button_rect = pygame.Rect(WIDTH//2 - 100, 600, 200, 60)
+    pygame.draw.rect(screen, (0, 255, 0), button_rect)
+    btn_text = text_font.render("START", True, (0, 0, 0))
+    screen.blit(btn_text, (button_rect.centerx - btn_text.get_width()//2,
+                           button_rect.centery - btn_text.get_height()//2))
+    
+    return button_rect
 
 running = True
 while running:
+    if game_state == "menu":
+        button_rect = draw_menu()
+        pygame.display.flip()
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if button_rect.collidepoint(event.pos):
+                game_state = "playing"
+
+        
+    elif game_state == "playing":
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP and player_pos[1] >= 650:
