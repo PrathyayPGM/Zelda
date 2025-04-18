@@ -109,6 +109,7 @@ while running:
     for i in range(ammo):
         pygame.draw.rect(screen, (255, 255, 0), (20 + i * 15, 20, 10, 20))
 
+    
     pygame.draw.rect(screen, (255, 0, 0), (20, 50, health * 2, 20))
     
     pygame.draw.circle(screen, GREEN, (int(player_pos[0]), int(player_pos[1])), PLAYER_RADIUS)
