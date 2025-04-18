@@ -100,7 +100,7 @@ while running:
                     else:
                         print("No more bullets left as ammo")
                 if event.key == pygame.K_z:
-                    time.sleep(0.02)
+                    time.sleep(0.2)
                     ammo = 5
 
         key = pygame.key.get_pressed()
