@@ -1,5 +1,6 @@
 import pygame
 import sys
+import random
 
 WIDTH, HEIGHT = 1000, 800
 GREEN = (0, 255, 0)
