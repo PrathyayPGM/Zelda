@@ -105,9 +105,9 @@ while running:
         else:
             pygame.draw.rect(screen, (255, 0, 0), bullet['rect'])
 
-    font = pygame.font.SysFont(None, 36)
-    ammo_text = font.render(f'Ammo: {ammo}', True, (255, 255, 255))
-    screen.blit(ammo_text, (20, 20))
+    for i in range(ammo):
+        pygame.draw.rect(screen, (255, 255, 0), (20 + i * 15, 20, 10, 20))
+
 
     
     pygame.draw.circle(screen, GREEN, (int(player_pos[0]), int(player_pos[1])), PLAYER_RADIUS)
