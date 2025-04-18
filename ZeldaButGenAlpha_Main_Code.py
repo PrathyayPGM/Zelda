@@ -22,6 +22,7 @@ bullet_speed = 10
 ammo = 5
 
 pygame.init()
+font = pygame.font.SysFont(None, 28)
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
@@ -111,6 +112,10 @@ while running:
 
     
     pygame.draw.rect(screen, (255, 0, 0), (20, 50, health * 2, 20))
+    ammo_label = font.render("Ammo", True, (255, 255, 255))
+    screen.blit(ammo_label, (20, 0))
+    health_label = font.render("Health", True, (255, 255, 255))
+    screen.blit(health_label, (20, 75))
     
     pygame.draw.circle(screen, GREEN, (int(player_pos[0]), int(player_pos[1])), PLAYER_RADIUS)
     screen.blit(ground, (0, 755))
