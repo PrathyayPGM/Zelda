@@ -35,6 +35,14 @@ try:
 except:
     print("Couldn't load bullet image, using rectangle instead")
     bullet_img = None
+# Load player image
+try:
+    player_img = pygame.image.load('zelda.png').convert_alpha()
+    player_img = pygame.transform.scale(player_img, (PLAYER_RADIUS * 2, PLAYER_RADIUS * 2))
+    player_img_left = pygame.transform.flip(player_img, True, False)
+except:
+    print("Couldn't load player image")
+    player_img = None
 
 ground = pygame.transform.scale(pygame.image.load('ground.png').convert_alpha(), (WIDTH, HEIGHT // 2))
 sky = pygame.transform.scale(pygame.image.load('sky.jpeg').convert_alpha(), (WIDTH, HEIGHT))
@@ -154,7 +162,12 @@ while running:
         health_label = font.render("Health", True, (255, 255, 255))
         screen.blit(health_label, (20, 75))
 
-        pygame.draw.circle(screen, GREEN, (int(player_pos[0]), int(player_pos[1])), PLAYER_RADIUS)
+        if player_img:
+            img_to_draw = player_img if player_facing_right else player_img_left
+            screen.blit(img_to_draw, (player_pos[0] - PLAYER_RADIUS, player_pos[1] - PLAYER_RADIUS))
+        else:
+            pygame.draw.circle(screen, GREEN, (int(player_pos[0]), int(player_pos[1])), PLAYER_RADIUS)
+
         screen.blit(ground, (0, 755))
         pygame.display.flip()
 
