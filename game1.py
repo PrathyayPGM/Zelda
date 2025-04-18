@@ -77,7 +77,7 @@ while running:
         bullet['rect'].x = bullet['x']
         # Remove arrows that go off screen
         if bullet['x'] > WIDTH or bullet['x'] < 0:
-            bullets.remove(arrow)
+            bullets.remove(bullet)
     
     player_rect = pygame.Rect(
         player_pos[0] - PLAYER_RADIUS,
