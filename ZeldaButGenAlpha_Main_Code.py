@@ -158,6 +158,6 @@ while running:
         screen.blit(ground, (0, 755))
         pygame.display.flip()
 
-        clock.tick(60)
+        clock.tick(70)
 
 pygame.quit()
