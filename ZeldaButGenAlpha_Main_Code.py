@@ -35,7 +35,7 @@ except:
     bullet_img = None
 
 ground = pygame.image.load('ground.png').convert_alpha()
-sky = pygame.transform.scale(pygame.image.load('sky2.jpg').convert_alpha(), (WIDTH, HEIGHT))
+sky = pygame.transform.scale(pygame.image.load('sky.jpeg').convert_alpha(), (WIDTH, HEIGHT))
 
 running = True
 while running:
