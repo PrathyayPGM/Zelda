@@ -63,7 +63,7 @@ def draw_menu():
     title_font = pygame.font.SysFont(None, 80)
     text_font = pygame.font.SysFont(None, 36)
     
-    title = title_font.render("Zelda with a Gun", True, (0, 200, 255))
+    title = title_font.render("Zelda but GEN ALPHA", True, (0, 255, 0))
     screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 100))
 
     instructions = [
@@ -207,6 +207,6 @@ while running:
         screen.blit(ground, (0, 755))
         pygame.display.flip()
 
-        clock.tick(60)
+        clock.tick(70)
 
 pygame.quit()
