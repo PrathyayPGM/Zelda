@@ -56,7 +56,6 @@ class Player:
         self.pos[1] += self.gravity
         
         # Keep player in bounds
-        self.pos[0] = max(self.radius, min(WIDTH - self.radius, self.pos[0]))
         self.pos[1] = max(self.radius, min(HEIGHT - 85, self.pos[1]))
         
         # Update shoot cooldown
