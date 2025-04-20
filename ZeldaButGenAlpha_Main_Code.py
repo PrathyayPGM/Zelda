@@ -23,6 +23,11 @@ bullet_speed = 10
 ammo = 5
 
 pygame.init()
+pygame.mixer.init()
+pygame.mixer.music.load("Game.mp3.mp3")
+pygame.mixer.music.set_volume(0.7)  # Volume: 0.0 to 1.0
+pygame.mixer.music.play(-1)  # -1 means loop forever
+
 game_state = "menu"
 font = pygame.font.SysFont(None, 28)
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -49,7 +54,7 @@ except:
 # Load gun image
 try:
     gun_img = pygame.image.load('gun.png').convert_alpha()
-    gun_img = pygame.transform.scale(gun_img, (40, 20))
+    gun_img = pygame.transform.scale(gun_img, (100, 60))
     gun_img_left = pygame.transform.flip(gun_img, True, False)
 except:
     print("Couldn't load gun image, using rectangle instead")
@@ -89,15 +94,15 @@ def draw_menu():
 def draw_gun():
     # Calculate gun position based on player position and direction
     if player_facing_right:
-        gun_x = player_pos[0] + PLAYER_RADIUS - 5
-        gun_y = player_pos[1] - 5
+        gun_x = player_pos[0] + PLAYER_RADIUS - 30
+        gun_y = player_pos[1] - 30
         if gun_img:
             screen.blit(gun_img, (gun_x, gun_y))
         else:
             pygame.draw.rect(screen, (100, 100, 100), (gun_x, gun_y, 40, 10))
     else:
-        gun_x = player_pos[0] - PLAYER_RADIUS - 35  # Adjust for flipped position
-        gun_y = player_pos[1] - 5
+        gun_x = player_pos[0] - PLAYER_RADIUS - 70  # Adjust for flipped position
+        gun_y = player_pos[1] - 30
         if gun_img:
             screen.blit(gun_img_left, (gun_x, gun_y))
         else:
