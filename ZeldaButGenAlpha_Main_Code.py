@@ -2,6 +2,7 @@ import pygame
 import sys
 import random
 import time
+import math
 
 WIDTH, HEIGHT = 1000, 800
 GREEN = (0, 255, 0)
@@ -35,6 +36,7 @@ try:
 except:
     print("Couldn't load bullet image, using rectangle instead")
     bullet_img = None
+
 # Load player image
 try:
     player_img = pygame.image.load('zelda.png').convert_alpha()
@@ -44,6 +46,15 @@ except:
     print("Couldn't load player image")
     player_img = None
 
+# Load gun image
+try:
+    gun_img = pygame.image.load('gun.png').convert_alpha()
+    gun_img = pygame.transform.scale(gun_img, (40, 20))
+    gun_img_left = pygame.transform.flip(gun_img, True, False)
+except:
+    print("Couldn't load gun image, using rectangle instead")
+    gun_img = None
+
 ground = pygame.transform.scale(pygame.image.load('ground.png').convert_alpha(), (WIDTH, HEIGHT // 2))
 sky = pygame.transform.scale(pygame.image.load('sky.jpeg').convert_alpha(), (WIDTH, HEIGHT))
 
@@ -52,12 +63,12 @@ def draw_menu():
     title_font = pygame.font.SysFont(None, 80)
     text_font = pygame.font.SysFont(None, 36)
     
-    title = title_font.render("Zelda but Gen Alpha", True, (0, 200, 255))
+    title = title_font.render("Zelda with a Gun", True, (0, 200, 255))
     screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 100))
 
     instructions = [
         "left arrow / right arrow - Move",
-        "up arrow  - Jump",
+        "up arrow - Jump",
         "SPACE - Shoot (uses ammo)",
         "Z - Reload",
         "P - Pause",
@@ -74,6 +85,23 @@ def draw_menu():
     screen.blit(btn_text, (button_rect.centerx - btn_text.get_width() // 2,
                            button_rect.centery - btn_text.get_height() // 2))
     return button_rect
+
+def draw_gun():
+    # Calculate gun position based on player position and direction
+    if player_facing_right:
+        gun_x = player_pos[0] + PLAYER_RADIUS - 5
+        gun_y = player_pos[1] - 5
+        if gun_img:
+            screen.blit(gun_img, (gun_x, gun_y))
+        else:
+            pygame.draw.rect(screen, (100, 100, 100), (gun_x, gun_y, 40, 10))
+    else:
+        gun_x = player_pos[0] - PLAYER_RADIUS - 35  # Adjust for flipped position
+        gun_y = player_pos[1] - 5
+        if gun_img:
+            screen.blit(gun_img_left, (gun_x, gun_y))
+        else:
+            pygame.draw.rect(screen, (100, 100, 100), (gun_x, gun_y, 40, 10))
 
 running = True
 while running:
@@ -98,10 +126,15 @@ while running:
                     player_gravity = -player_jump
                 if event.key == pygame.K_SPACE:
                     if ammo > 0:
+                        # Adjust bullet starting position to come from gun
+                        if player_facing_right:
+                            bullet_x = player_pos[0] + PLAYER_RADIUS + 30
+                        else:
+                            bullet_x = player_pos[0] - PLAYER_RADIUS - 30
                         bullets.append({
-                            'x': player_pos[0],
-                            'y': player_pos[1],
-                            'rect': pygame.Rect(player_pos[0], player_pos[1], 50, 20),
+                            'x': bullet_x,
+                            'y': player_pos[1] - 5,  # Align with gun height
+                            'rect': pygame.Rect(bullet_x, player_pos[1] - 5, 50, 20),
                             'facing_right': player_facing_right
                         })
                         ammo -= 1
@@ -167,6 +200,9 @@ while running:
             screen.blit(img_to_draw, (player_pos[0] - PLAYER_RADIUS, player_pos[1] - PLAYER_RADIUS))
         else:
             pygame.draw.circle(screen, GREEN, (int(player_pos[0]), int(player_pos[1])), PLAYER_RADIUS)
+        
+        # Draw the gun after the player so it appears in front
+        draw_gun()
 
         screen.blit(ground, (0, 755))
         pygame.display.flip()
