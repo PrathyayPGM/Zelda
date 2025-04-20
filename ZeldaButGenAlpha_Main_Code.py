@@ -19,7 +19,7 @@ health = 100
 # Projectile variables
 bullet_img = None
 bullets = []
-bullet_speed = 10
+bullet_speed = 25
 ammo = 5
 
 pygame.init()
@@ -94,14 +94,14 @@ def draw_menu():
 def draw_gun():
     # Calculate gun position based on player position and direction
     if player_facing_right:
-        gun_x = player_pos[0] + PLAYER_RADIUS - 30
+        gun_x = player_pos[0] + PLAYER_RADIUS - 38
         gun_y = player_pos[1] - 30
         if gun_img:
             screen.blit(gun_img, (gun_x, gun_y))
         else:
             pygame.draw.rect(screen, (100, 100, 100), (gun_x, gun_y, 40, 10))
     else:
-        gun_x = player_pos[0] - PLAYER_RADIUS - 70  # Adjust for flipped position
+        gun_x = player_pos[0] - PLAYER_RADIUS - 62  # Adjust for flipped position
         gun_y = player_pos[1] - 30
         if gun_img:
             screen.blit(gun_img_left, (gun_x, gun_y))
@@ -205,6 +205,11 @@ while running:
             screen.blit(img_to_draw, (player_pos[0] - PLAYER_RADIUS, player_pos[1] - PLAYER_RADIUS))
         else:
             pygame.draw.circle(screen, GREEN, (int(player_pos[0]), int(player_pos[1])), PLAYER_RADIUS)
+
+        if health <= 0:
+            font.render("GAME OVER", True, (0, 255, 255))
+            time.sleep(1)
+            running = False
         
         # Draw the gun after the player so it appears in front
         draw_gun()
