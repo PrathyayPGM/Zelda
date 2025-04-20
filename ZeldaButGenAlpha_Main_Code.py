@@ -9,7 +9,7 @@ GREEN = (0, 255, 0)
 BLACK = (0, 0, 0)
 
 player_pos = [400, 400]
-PLAYER_RADIUS = 25
+PLAYER_RADIUS = 40
 player_gravity = 0
 player_jump = 20
 player_speed = 7
@@ -172,7 +172,7 @@ while running:
             PLAYER_RADIUS * 2
         )
 
-        player_pos[1] = max(70, min(HEIGHT - 70, player_pos[1]))
+        player_pos[1] = max(70, min(HEIGHT - 85, player_pos[1]))
 
         screen.fill(BLACK)
         screen.blit(sky, (0, 0))
