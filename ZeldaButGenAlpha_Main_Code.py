@@ -20,7 +20,7 @@ class GameState(Enum):
 
 class Goat:
     def __init__(self):
-        self.goat_pos = [1000, 400]
+        self.goat_pos = [1000, 710]
         self.goat_health = 50
         self.goat_speed = 5
         self.attack = 25
@@ -127,17 +127,12 @@ class Game:
 
     def update_goat(self):
     # Simple movement towards the player
-        if self.goat.goat_pos[0] > self.player.pos[0]:
-            self.goat.goat_pos[0] -= self.goat.goat_speed
-        else:
-            self.goat.goat_pos[0] += self.goat.goat_speed
-            
-        if self.goat.goat_pos[1] > self.player.pos[1]:
-            self.goat.goat_pos[1] -= self.goat.goat_speed
-        else:
-            self.goat.goat_pos[1] += self.goat.goat_speed  
+        self.goat.goat_pos[0] -= self.goat.goat_speed 
 
     def draw_goat(self):
+        if self.goat.goat_health <= 0:
+            return
+        
         if self.goat.image:
             # Determine if goat should face left or right based on player position
             facing_right = self.goat.goat_pos[0] < self.player.pos[0]
@@ -265,9 +260,17 @@ class Game:
             else:
                 bullet['x'] -= 25
 
-            bullet['rect'].x = bullet['x']
+            bullet['rect'].x = bullet['x'] 
             if bullet['x'] > WIDTH or bullet['x'] < 0:
                 self.bullets.remove(bullet)
+        
+            dx = bullet['x'] - self.goat.goat_pos[0]
+            dy = bullet['y'] - self.goat.goat_pos[1]
+            dist = math.sqrt(dx*dx + dy*dy)
+            if dist < self.goat.goat_radius:
+                self.goat.goat_health -= 25
+                self.bullets.remove(bullet)
+                continue
                 
     def draw_bullets(self):
         for bullet in self.bullets:
