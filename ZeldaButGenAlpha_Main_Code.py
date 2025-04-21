@@ -11,6 +11,7 @@ GREEN = (0, 255, 0)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 FPS = 70
+goats_killed = 0
 
 class GameState(Enum):
     MENU = 0
@@ -29,10 +30,26 @@ class Goat:
 
     def load_img(self):
         try:
-            self.image = pygame.image.load('goat.png').convert_alpha()
+            self.image = pygame.image.load('ram.png').convert_alpha()
             self.image = pygame.transform.scale(self.image, (self.goat_radius * 2, self.goat_radius * 2))
         except:
             print("Couldn't load goat image, using circle instead")
+            self.image = None
+
+class Squirrel:
+    def __init__(self):
+        self.squir_pos = [WIDTH, 717]
+        self.squir_health = 75
+        self.squir_speed = 5
+        self.squir_radius = 40
+        self.load_img()
+
+    def load_img(self):
+        try:
+            self.image = pygame.image.load('squirrel.png').convert_alpha()
+            self.image = pygame.transform.scale(self.image, (self.squir_radius * 2, self.squir_radius * 2))
+        except:
+            print("Couldn't load squirrel image, using circle instead")
             self.image = None
 
 class Player:
@@ -121,9 +138,13 @@ class Game:
         self.bullets = []
         self.goats = []
         self.last_goat_spawn = 0
-        self.goat_spawn_interval = 2000# 2 seconds in milliseconds
+        self.goat_spawn_interval = 2000  # 2 seconds in milliseconds
+        self.squir = []
+        self.last_squir_spawn = 0
+        self.squir_spawn_interval = 2000
         self.load_assets()
         self.setup_audio()
+        self.goats_killed = 0
 
     def spawn_goat(self):
         """Create a new goat at the right edge of the screen"""
@@ -136,13 +157,14 @@ class Game:
         current_time = pygame.time.get_ticks()
         
         # Spawn new goat if enough time has passed
-        if current_time - self.last_goat_spawn > self.goat_spawn_interval:
+        if self.goats_killed < 5 and current_time - self.last_goat_spawn > self.goat_spawn_interval:
             self.spawn_goat()
         
         # Update all goats
         for goat in self.goats[:]:  # Use slice copy to safely modify list during iteration
             if goat.goat_health <= 0:
                 self.goats.remove(goat)
+                self.goats_killed += 1
                 continue
                 
             # Simple movement towards the player
@@ -151,7 +173,7 @@ class Game:
             # Remove goats that go off-screen
             if goat.goat_pos[0] < -goat.goat_radius:
                 self.goats.remove(goat)
-
+    
     def draw_goats(self):
         for goat in self.goats:
             if goat.goat_health <= 0:
@@ -159,12 +181,67 @@ class Game:
                 
             if goat.image:
                 img = goat.image
-                self.screen.blit(img, (goat.goat_pos[0] - goat.goat_radius, 
-                                    goat.goat_pos[1] - goat.goat_radius))
+                self.screen.blit(img, (goat.goat_pos[0] - goat.goat_radius,
+                                      goat.goat_pos[1] - goat.goat_radius))
             else:
                 pygame.draw.circle(self.screen, (255, 255, 255), 
                                 (int(goat.goat_pos[0]), int(goat.goat_pos[1])), 
                                 goat.goat_radius)
+
+    def spawn_squir(self):
+        """Create a new squirrel at the right edge of the screen"""
+        squir = Squirrel()
+        squir.squir_pos = [WIDTH + squir.squir_radius, 717]  # Start just off-screen
+        self.squir.append(squir)
+        self.last_squir_spawn = pygame.time.get_ticks()
+
+    def update_squirs(self):
+        current_time = pygame.time.get_ticks()
+        
+        # Spawn new squirrel if enough time has passed
+        if current_time - self.last_squir_spawn > self.squir_spawn_interval:
+            self.spawn_squir()
+        
+        # Update all squirrels
+        for squir in self.squir[:]:  # Use slice copy to safely modify list during iteration
+            if squir.squir_health <= 0:
+                self.squir.remove(squir)
+                continue
+                
+            # Simple movement towards the player
+            squir.squir_pos[0] -= squir.squir_speed
+            
+            # Remove squirrels that go off-screen
+            if squir.squir_pos[0] < -squir.squir_radius:
+                self.squir.remove(squir)
+
+    def draw_squirs(self):
+        for squir in self.squir:
+            if squir.squir_health <= 0:
+                continue
+                
+            if squir.image:
+                img = squir.image
+                self.screen.blit(img, (squir.squir_pos[0] - squir.squir_radius,
+                                    squir.squir_pos[1] - squir.squir_radius))
+            else:
+                pygame.draw.circle(self.screen, (255, 255, 255), 
+                                (int(squir.squir_pos[0]), int(squir.squir_pos[1])), 
+                                squir.squir_radius)
+                
+    def check_collisions_squir(self):
+        for squir in self.squir:
+            if squir.squir_health <= 0:
+                continue
+                
+            # Calculate distance between player and squirrel
+            dx = self.player.pos[0] - squir.squir_pos[0]
+            dy = self.player.pos[1] - squir.squir_pos[1]
+            distance = math.sqrt(dx*dx + dy*dy)
+            
+            # If collision occurs
+            if distance < self.player.radius + squir.squir_radius:
+                self.player.health -= 2  # Or whatever damage value
 
     def check_collisions(self):
         for goat in self.goats:
@@ -280,6 +357,10 @@ class Game:
         health_label = font.render("Health", True, WHITE)
         self.screen.blit(health_label, (20, 75))
         
+        # Draw goats killed counter
+        kills_text = font.render(f"Goats Killed: {self.goats_killed}", True, WHITE)
+        self.screen.blit(kills_text, (WIDTH - 200, 20))
+        
     def update_bullets(self):
         for bullet in self.bullets[:]:
             if bullet['facing_right']:
@@ -291,8 +372,25 @@ class Game:
             if bullet['x'] > WIDTH or bullet['x'] < 0:
                 self.bullets.remove(bullet)
                 continue
-                
-            # Check collision with all goats
+            
+            # Check collision with squirrels
+            for squir in self.squir[:]:
+                if squir.squir_health <= 0:
+                    continue
+                    
+                dx = bullet['x'] - squir.squir_pos[0]
+                dy = bullet['y'] - squir.squir_pos[1]
+                dist = math.sqrt(dx*dx + dy*dy)
+                if dist < squir.squir_radius:
+                    squir.squir_health -= 25
+                    squir.squir_pos[0] += 155
+                    if bullet in self.bullets:
+                        self.bullets.remove(bullet)
+                    if squir.squir_health <= 0:
+                        self.squir.remove(squir)
+                    break
+                    
+            # Check collision with goats
             for goat in self.goats[:]:
                 if goat.goat_health <= 0:
                     continue
@@ -302,11 +400,12 @@ class Game:
                 dist = math.sqrt(dx*dx + dy*dy)
                 if dist < goat.goat_radius:
                     goat.goat_health -= 25
-                    goat.goat_pos[0] += 155 #knockback
-                    if bullet in self.bullets:  # Check if still exists
+                    goat.goat_pos[0] += 155
+                    if bullet in self.bullets:
                         self.bullets.remove(bullet)
                     if goat.goat_health <= 0:
                         self.goats.remove(goat)
+                        self.goats_killed += 1
                     break
 
     def draw_bullets(self):
@@ -372,6 +471,11 @@ class Game:
                 self.update_goats()
                 self.check_collisions()
                 
+                # Spawn squirrels after 5 goats killed
+                if self.goats_killed >= 5:
+                    self.update_squirs()
+                    self.check_collisions_squir()
+                
                 # Draw everything
                 if self.sky:
                     self.screen.blit(self.sky, (0, 0))
@@ -382,7 +486,11 @@ class Game:
                 self.player.draw(self.screen)
                 self.draw_gun()
                 self.draw_hud()
-                self.draw_goats()
+                if goats_killed < 5:
+                    self.draw_goats()
+                
+                if self.goats_killed >= 5:
+                    self.draw_squirs()
                 
                 if self.ground:
                     self.screen.blit(self.ground, (0, 755))
@@ -392,7 +500,7 @@ class Game:
                     
             elif self.state == GameState.GAME_OVER:
                 font = pygame.font.SysFont(None, 72)
-                text = font.render("GAME OVER", True, (0, 255, 255))
+                text = font.render("GAME OVER", True, (255, 0, 0))
                 self.screen.blit(text, (WIDTH//2 - text.get_width()//2, HEIGHT//2 - text.get_height()//2))
                 pygame.display.flip()
                 time.sleep(2)
@@ -407,6 +515,7 @@ class Game:
             self.clock.tick(FPS)
             
         pygame.quit()
+        sys.exit()
 
 if __name__ == "__main__":
     game = Game()
