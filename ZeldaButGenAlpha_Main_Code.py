@@ -29,7 +29,7 @@ class Goat:
 
     def load_img(self):
         try:
-            self.image = pygame.image.load('GOAT.png.png').convert_alpha()
+            self.image = pygame.image.load('goat.png').convert_alpha()
             self.image = pygame.transform.scale(self.image, (self.goat_radius * 2, self.goat_radius * 2))
             self.image_left = pygame.transform.flip(self.image, True, False)
         except:
@@ -87,7 +87,7 @@ class Player:
             self.gravity = -self.jump_power
             
     def shoot(self):
-        if not self.gun_visible:  # Add this condition
+        if not self.gun_visible:
             print("Can't shoot - gun is hidden!")
             return None
         if self.ammo > 0 and self.shoot_cooldown <= 0:
@@ -110,7 +110,7 @@ class Player:
             img = self.image if self.facing_right else self.image_left
             screen.blit(img, (self.pos[0] - self.radius, self.pos[1] - self.radius))
         else:
-            pygame.draw.circle((screen, GREEN, (int(self.pos[0]), int(self.pos[1]))), self.radius)
+            pygame.draw.circle(screen, GREEN, (int(self.pos[0]), int(self.pos[1])), self.radius)
 
 class Game:
     def __init__(self):
@@ -126,7 +126,9 @@ class Game:
         self.setup_audio()
 
     def update_goat(self):
-    # Simple movement towards the player
+        if self.goat.goat_health <= 0:  # Don't move if dead
+            return
+        # Simple movement towards the player
         self.goat.goat_pos[0] -= self.goat.goat_speed 
 
     def draw_goat(self):
@@ -145,14 +147,16 @@ class Game:
                             self.goat.goat_radius) 
 
     def check_collisions(self):
-    # Calculate distance between player and goat
+        # Calculate distance between player and goat
+        if self.goat.goat_health <= 0:  # Skip if goat is dead
+            return
         dx = self.player.pos[0] - self.goat.goat_pos[0]
         dy = self.player.pos[1] - self.goat.goat_pos[1]
         distance = math.sqrt(dx*dx + dy*dy)
         
         # If collision occurs
         if distance < self.player.radius + self.goat.goat_radius:
-            self.player.health -= 25  # Or whatever damage value you want 
+            self.player.health -= 1  # Or whatever
             
     def load_assets(self):
         # Load bullet image
@@ -183,13 +187,15 @@ class Game:
             self.sky = None
             
     def setup_audio(self):
-
-        pygame.mixer.music.load("Game.mp3.mp3")
-        pygame.mixer.music.set_volume(0.7)
-        pygame.mixer.music.play(-1)
-        self.gun_toggle_sound = pygame.mixer.Sound("reload.mp3")  
-        self.gun_toggle_sound.set_volume(1.0)
-
+        try:
+            pygame.mixer.music.load("Game.mp3.mp3")
+            pygame.mixer.music.set_volume(0.7)
+            pygame.mixer.music.play(-1)
+            self.gun_toggle_sound = pygame.mixer.Sound("reload.mp3")  
+            self.gun_toggle_sound.set_volume(1.0)
+        except:
+            print("Couldn't load audio files")
+            self.gun_toggle_sound = None
             
     def draw_menu(self):
         self.screen.fill((20, 20, 20))
@@ -237,7 +243,6 @@ class Game:
         font = pygame.font.SysFont(None, 28)
         
         # Draw ammo
-        ammo_color = (255, 255, 0) if self.player.gun_visible else (100, 100, 100)
         for i in range(self.player.ammo):
             pygame.draw.rect(self.screen, (255, 255, 0), (20 + i * 15, 20, 10, 20))
         ammo_label = font.render("Ammo", True, WHITE)
@@ -297,7 +302,7 @@ class Game:
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_x:  
                             self.player.gun_visible = not self.player.gun_visible
-                            if hasattr(self, 'reload.mp3') and self.gun_toggle_sound:
+                            if hasattr(self, 'gun_toggle_sound') and self.gun_toggle_sound:
                                 self.gun_toggle_sound.play()
                         if event.key == pygame.K_UP:
                             self.player.jump()
@@ -321,6 +326,8 @@ class Game:
                 keys = pygame.key.get_pressed()
                 self.player.update(keys)
                 self.update_bullets()
+                self.update_goat()
+                self.check_collisions()
                 
                 # Draw everything
                 if self.sky:
@@ -332,7 +339,6 @@ class Game:
                 self.player.draw(self.screen)
                 self.draw_gun()
                 self.draw_hud()
-                self.update_goat()
                 self.draw_goat()
                 
                 if self.ground:
