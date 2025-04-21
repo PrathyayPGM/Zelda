@@ -20,7 +20,7 @@ class GameState(Enum):
 
 class Goat:
     def __init__(self):
-        self.goat_pos = [1000, 717]
+        self.goat_pos = [WIDTH, 717]
         self.goat_health = 50
         self.goat_speed = 5
         self.attack = 25
@@ -28,12 +28,12 @@ class Goat:
         self.load_img()
 
     def load_img(self):
-        
-        self.image = pygame.image.load('goat.png').convert_alpha()
-        self.image = pygame.transform.scale(self.image, (self.goat_radius * 2, self.goat_radius * 2))
-
-
-
+        try:
+            self.image = pygame.image.load('goat.png').convert_alpha()
+            self.image = pygame.transform.scale(self.image, (self.goat_radius * 2, self.goat_radius * 2))
+        except:
+            print("Couldn't load goat image, using circle instead")
+            self.image = None
 
 class Player:
     def __init__(self):
@@ -119,43 +119,67 @@ class Game:
         self.state = GameState.MENU
         self.player = Player()
         self.bullets = []
+        self.goats = []
+        self.last_goat_spawn = 0
+        self.goat_spawn_interval = 2000# 2 seconds in milliseconds
         self.load_assets()
         self.setup_audio()
-        self.goat = Goat()
 
-    def update_goat(self):
-        if self.goat.goat_health <= 0:  # Don't move if dead
-            return
-        # Simple movement towards the player
-        self.goat.goat_pos[0] -= self.goat.goat_speed 
+    def spawn_goat(self):
+        """Create a new goat at the right edge of the screen"""
+        goat = Goat()
+        goat.goat_pos = [WIDTH + goat.goat_radius, 717]  # Start just off-screen
+        self.goats.append(goat)
+        self.last_goat_spawn = pygame.time.get_ticks()
 
-    def draw_goat(self):
-        if self.goat.goat_health <= 0:
-            return
+    def update_goats(self):
+        current_time = pygame.time.get_ticks()
         
-        if self.goat.image:
-            # Determine if goat should face left or right based on player position
- 
-            img = self.goat.image
-            self.screen.blit(img, (self.goat.goat_pos[0] - self.goat.goat_radius, 
-                                self.goat.goat_pos[1] - self.goat.goat_radius))
-        else:
-            pygame.draw.circle(self.screen, (255, 255, 255), 
-                            (int(self.goat.goat_pos[0]), int(self.goat.goat_pos[1])), 
-                            self.goat.goat_radius) 
+        # Spawn new goat if enough time has passed
+        if current_time - self.last_goat_spawn > self.goat_spawn_interval:
+            self.spawn_goat()
+        
+        # Update all goats
+        for goat in self.goats[:]:  # Use slice copy to safely modify list during iteration
+            if goat.goat_health <= 0:
+                self.goats.remove(goat)
+                continue
+                
+            # Simple movement towards the player
+            goat.goat_pos[0] -= goat.goat_speed
+            
+            # Remove goats that go off-screen
+            if goat.goat_pos[0] < -goat.goat_radius:
+                self.goats.remove(goat)
+
+    def draw_goats(self):
+        for goat in self.goats:
+            if goat.goat_health <= 0:
+                continue
+                
+            if goat.image:
+                img = goat.image
+                self.screen.blit(img, (goat.goat_pos[0] - goat.goat_radius, 
+                                    goat.goat_pos[1] - goat.goat_radius))
+            else:
+                pygame.draw.circle(self.screen, (255, 255, 255), 
+                                (int(goat.goat_pos[0]), int(goat.goat_pos[1])), 
+                                goat.goat_radius)
 
     def check_collisions(self):
-        # Calculate distance between player and goat
-        if self.goat.goat_health <= 0:  # Skip if goat is dead
-            return
-        dx = self.player.pos[0] - self.goat.goat_pos[0]
-        dy = self.player.pos[1] - self.goat.goat_pos[1]
-        distance = math.sqrt(dx*dx + dy*dy)
-        
-        # If collision occurs
-        if distance < self.player.radius + self.goat.goat_radius:
-            self.player.health -= 1  # Or whatever
+        for goat in self.goats:
+            if goat.goat_health <= 0:
+                continue
+                
+            # Calculate distance between player and goat
+            dx = self.player.pos[0] - goat.goat_pos[0]
+            dy = self.player.pos[1] - goat.goat_pos[1]
+            distance = math.sqrt(dx*dx + dy*dy)
             
+            # If collision occurs
+            if distance < self.player.radius + goat.goat_radius:
+                self.player.health -= 1  # Or whatever damage value
+
     def load_assets(self):
         # Load bullet image
         try:
@@ -266,15 +290,25 @@ class Game:
             bullet['rect'].x = bullet['x'] 
             if bullet['x'] > WIDTH or bullet['x'] < 0:
                 self.bullets.remove(bullet)
-        
-            dx = bullet['x'] - self.goat.goat_pos[0]
-            dy = bullet['y'] - self.goat.goat_pos[1]
-            dist = math.sqrt(dx*dx + dy*dy)
-            if dist < self.goat.goat_radius:
-                self.goat.goat_health -= 25
-                self.bullets.remove(bullet)
                 continue
                 
+            # Check collision with all goats
+            for goat in self.goats[:]:
+                if goat.goat_health <= 0:
+                    continue
+                    
+                dx = bullet['x'] - goat.goat_pos[0]
+                dy = bullet['y'] - goat.goat_pos[1]
+                dist = math.sqrt(dx*dx + dy*dy)
+                if dist < goat.goat_radius:
+                    goat.goat_health -= 25
+                    goat.goat_pos[0] += 5
+                    if bullet in self.bullets:  # Check if still exists
+                        self.bullets.remove(bullet)
+                    if goat.goat_health <= 0:
+                        self.goats.remove(goat)
+                    break
+
     def draw_bullets(self):
         for bullet in self.bullets:
             if self.bullet_img:
@@ -285,7 +319,16 @@ class Game:
                 
     def run(self):
         running = True
+        first_goat_spawned = False
+        
         while running:
+            current_time = pygame.time.get_ticks()
+            
+            # Spawn first goat after 1 second
+            if self.state == GameState.PLAYING and not first_goat_spawned and current_time > 1000:
+                self.spawn_goat()
+                first_goat_spawned = True
+            
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -295,6 +338,8 @@ class Game:
                         button_rect = self.draw_menu()
                         if button_rect.collidepoint(event.pos):
                             self.state = GameState.PLAYING
+                            first_goat_spawned = False
+                            self.last_goat_spawn = pygame.time.get_ticks()
                             
                 elif self.state == GameState.PLAYING:
                     if event.type == pygame.KEYDOWN:
@@ -324,7 +369,7 @@ class Game:
                 keys = pygame.key.get_pressed()
                 self.player.update(keys)
                 self.update_bullets()
-                self.update_goat()
+                self.update_goats()
                 self.check_collisions()
                 
                 # Draw everything
@@ -337,7 +382,7 @@ class Game:
                 self.player.draw(self.screen)
                 self.draw_gun()
                 self.draw_hud()
-                self.draw_goat()
+                self.draw_goats()
                 
                 if self.ground:
                     self.screen.blit(self.ground, (0, 755))
