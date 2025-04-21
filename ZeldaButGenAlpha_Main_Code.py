@@ -18,8 +18,28 @@ class GameState(Enum):
     GAME_OVER = 2
     PAUSED = 3
 
+class Goat:
+    def __init__(self):
+        self.goat_pos = [1000, 400]
+        self.goat_health = 50
+        self.goat_speed = 5
+        self.attack = 25
+        self.goat_radius = 40
+        self.load_img()
+
+    def load_img(self):
+        try:
+            self.image = pygame.image.load('GOAT.png.png').convert_alpha()
+            self.image = pygame.transform.scale(self.image, (self.goat_radius * 2, self.goat_radius * 2))
+            self.image_left = pygame.transform.flip(self.image, True, False)
+        except:
+            print("Couldn't load goat image, using circle instead")
+            self.image = None
+
+
 class Player:
     def __init__(self):
+        self.gun_visible = False
         self.pos = [400, 400]
         self.radius = 40
         self.gravity = 0
@@ -67,6 +87,9 @@ class Player:
             self.gravity = -self.jump_power
             
     def shoot(self):
+        if not self.gun_visible:  # Add this condition
+            print("Can't shoot - gun is hidden!")
+            return None
         if self.ammo > 0 and self.shoot_cooldown <= 0:
             self.ammo -= 1
             self.shoot_cooldown = 10  # Cooldown frames
@@ -93,6 +116,7 @@ class Game:
     def __init__(self):
         pygame.init()
         pygame.mixer.init()
+        self.goat = Goat()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
         self.state = GameState.MENU
@@ -100,7 +124,41 @@ class Game:
         self.bullets = []
         self.load_assets()
         self.setup_audio()
+
+    def update_goat(self):
+    # Simple movement towards the player
+        if self.goat.goat_pos[0] > self.player.pos[0]:
+            self.goat.goat_pos[0] -= self.goat.goat_speed
+        else:
+            self.goat.goat_pos[0] += self.goat.goat_speed
+            
+        if self.goat.goat_pos[1] > self.player.pos[1]:
+            self.goat.goat_pos[1] -= self.goat.goat_speed
+        else:
+            self.goat.goat_pos[1] += self.goat.goat_speed  
+
+    def draw_goat(self):
+        if self.goat.image:
+            # Determine if goat should face left or right based on player position
+            facing_right = self.goat.goat_pos[0] < self.player.pos[0]
+            img = self.goat.image if facing_right else self.goat.image_left
+            self.screen.blit(img, (self.goat.goat_pos[0] - self.goat.goat_radius, 
+                                self.goat.goat_pos[1] - self.goat.goat_radius))
+        else:
+            pygame.draw.circle(self.screen, (255, 255, 255), 
+                            (int(self.goat.goat_pos[0]), int(self.goat.goat_pos[1])), 
+                            self.goat.goat_radius) 
+
+    def check_collisions(self):
+    # Calculate distance between player and goat
+        dx = self.player.pos[0] - self.goat.goat_pos[0]
+        dy = self.player.pos[1] - self.goat.goat_pos[1]
+        distance = math.sqrt(dx*dx + dy*dy)
         
+        # If collision occurs
+        if distance < self.player.radius + self.goat.goat_radius:
+            self.player.health -= 25  # Or whatever damage value you want 
+            
     def load_assets(self):
         # Load bullet image
         try:
@@ -130,12 +188,13 @@ class Game:
             self.sky = None
             
     def setup_audio(self):
-        try:
-            pygame.mixer.music.load("Game.mp3.mp3")
-            pygame.mixer.music.set_volume(0.7)
-            pygame.mixer.music.play(-1)
-        except:
-            print("Couldn't load background music")
+
+        pygame.mixer.music.load("Game.mp3.mp3")
+        pygame.mixer.music.set_volume(0.7)
+        pygame.mixer.music.play(-1)
+        self.gun_toggle_sound = pygame.mixer.Sound("reload.mp3")  
+        self.gun_toggle_sound.set_volume(1.0)
+
             
     def draw_menu(self):
         self.screen.fill((20, 20, 20))
@@ -148,6 +207,7 @@ class Game:
         instructions = [
             "left arrow / right arrow - Move",
             "up arrow - Jump",
+            "X - Take gun out", 
             "SPACE - Shoot (uses ammo)",
             "Z - Reload",
             "P - Pause",
@@ -166,26 +226,32 @@ class Game:
         return button_rect
         
     def draw_gun(self):
-        if self.player.facing_right:
-            gun_x = self.player.pos[0] + self.player.radius - 38
-            gun_y = self.player.pos[1] - 30
-            if self.gun_img:
-                self.screen.blit(self.gun_img, (gun_x, gun_y))
-        else:
-            gun_x = self.player.pos[0] - self.player.radius - 62
-            gun_y = self.player.pos[1] - 30
-            if self.gun_img:
-                self.screen.blit(self.gun_img_left, (gun_x, gun_y))
+        if self.player.gun_visible:
+            if self.player.facing_right:
+                gun_x = self.player.pos[0] + self.player.radius - 38
+                gun_y = self.player.pos[1] - 30
+                if self.gun_img:
+                    self.screen.blit(self.gun_img, (gun_x, gun_y))
+            else:
+                gun_x = self.player.pos[0] - self.player.radius - 62
+                gun_y = self.player.pos[1] - 30
+                if self.gun_img:
+                    self.screen.blit(self.gun_img_left, (gun_x, gun_y))
                 
     def draw_hud(self):
         font = pygame.font.SysFont(None, 28)
         
         # Draw ammo
+        ammo_color = (255, 255, 0) if self.player.gun_visible else (100, 100, 100)
         for i in range(self.player.ammo):
             pygame.draw.rect(self.screen, (255, 255, 0), (20 + i * 15, 20, 10, 20))
         ammo_label = font.render("Ammo", True, WHITE)
         self.screen.blit(ammo_label, (20, 0))
-        
+        gun_status = "READY" if self.player.gun_visible else "HIDDEN"
+        status_color = (0, 255, 0) if self.player.gun_visible else (255, 0, 0)
+        status_text = font.render(f"Gun: {gun_status}", True, status_color)
+        self.screen.blit(status_text, (20, 120))
+            
         # Draw health bar
         health_width = (self.player.health / self.player.max_health) * 200
         pygame.draw.rect(self.screen, (255, 0, 0), (20, 50, health_width, 20))
@@ -226,6 +292,10 @@ class Game:
                             
                 elif self.state == GameState.PLAYING:
                     if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_x:  
+                            self.player.gun_visible = not self.player.gun_visible
+                            if hasattr(self, 'reload.mp3') and self.gun_toggle_sound:
+                                self.gun_toggle_sound.play()
                         if event.key == pygame.K_UP:
                             self.player.jump()
                         if event.key == pygame.K_SPACE:
@@ -259,6 +329,8 @@ class Game:
                 self.player.draw(self.screen)
                 self.draw_gun()
                 self.draw_hud()
+                self.update_goat()
+                self.draw_goat()
                 
                 if self.ground:
                     self.screen.blit(self.ground, (0, 755))
