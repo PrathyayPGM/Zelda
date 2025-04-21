@@ -20,7 +20,7 @@ class GameState(Enum):
 
 class Goat:
     def __init__(self):
-        self.goat_pos = [1000, 710]
+        self.goat_pos = [1000, 717]
         self.goat_health = 50
         self.goat_speed = 5
         self.attack = 25
@@ -28,13 +28,11 @@ class Goat:
         self.load_img()
 
     def load_img(self):
-        try:
-            self.image = pygame.image.load('goat.png').convert_alpha()
-            self.image = pygame.transform.scale(self.image, (self.goat_radius * 2, self.goat_radius * 2))
-            self.image_left = pygame.transform.flip(self.image, True, False)
-        except:
-            print("Couldn't load goat image, using circle instead")
-            self.image = None
+        
+        self.image = pygame.image.load('goat.png').convert_alpha()
+        self.image = pygame.transform.scale(self.image, (self.goat_radius * 2, self.goat_radius * 2))
+
+
 
 
 class Player:
@@ -116,7 +114,6 @@ class Game:
     def __init__(self):
         pygame.init()
         pygame.mixer.init()
-        self.goat = Goat()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
         self.state = GameState.MENU
@@ -124,6 +121,7 @@ class Game:
         self.bullets = []
         self.load_assets()
         self.setup_audio()
+        self.goat = Goat()
 
     def update_goat(self):
         if self.goat.goat_health <= 0:  # Don't move if dead
@@ -137,8 +135,8 @@ class Game:
         
         if self.goat.image:
             # Determine if goat should face left or right based on player position
-            facing_right = self.goat.goat_pos[0] < self.player.pos[0]
-            img = self.goat.image if facing_right else self.goat.image_left
+ 
+            img = self.goat.image
             self.screen.blit(img, (self.goat.goat_pos[0] - self.goat.goat_radius, 
                                 self.goat.goat_pos[1] - self.goat.goat_radius))
         else:
