@@ -302,7 +302,7 @@ class Game:
                 dist = math.sqrt(dx*dx + dy*dy)
                 if dist < goat.goat_radius:
                     goat.goat_health -= 25
-                    goat.goat_pos[0] += 5
+                    goat.goat_pos[0] += 155 #knockback
                     if bullet in self.bullets:  # Check if still exists
                         self.bullets.remove(bullet)
                     if goat.goat_health <= 0:
